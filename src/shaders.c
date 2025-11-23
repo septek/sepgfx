@@ -4,60 +4,67 @@
 #include "sf/str.h"
 
 #define EXPECTED_NAME ls_ex
+#define EXPECTED_O GLint
 #define EXPECTED_E sf_shader_err
 #include <sf/containers/expected.h>
 
-ls_ex sf_load_shader(GLuint *out, const GLenum type, const sf_str path) {
-    ls_ex res;
+ls_ex sf_load_shader(const GLenum type, const sf_str path) {
     const sf_str spath = sf_str_fmt("%s.%s", path.c_str, type == GL_FRAGMENT_SHADER ? "frag" : "vert");
     uint8_t *sbuffer = NULL;
 
-    *out = glCreateShader(type);
+    GLint sh = glCreateShader(type);
 
     const long s = sf_file_size(spath);
     if (s <= 0) {
-        res = ls_ex_err((sf_shader_err){SF_SHADER_NOT_FOUND, SF_STR_EMPTY});
-        goto cleanup;
+        sf_str_free(spath);
+        return ls_ex_err((sf_shader_err){SF_SHADER_NOT_FOUND, SF_STR_EMPTY});
     }
 
     sbuffer = malloc((size_t)s + 1);
     sf_fs_ex fres = sf_load_file(sbuffer, spath);
     if (!fres.is_ok) {
-        res = ls_ex_err((sf_shader_err){SF_SHADER_NOT_FOUND, SF_STR_EMPTY});
-        goto cleanup;
+        sf_str_free(spath);
+        free(sbuffer);
+        glDeleteShader(sh);
+        return ls_ex_err((sf_shader_err){SF_SHADER_NOT_FOUND, SF_STR_EMPTY});
     }
     sbuffer[s] = '\0';
 
-    glShaderSource(*out, 1, (const GLchar **)&sbuffer, NULL);
-    glCompileShader(*out);
+    glShaderSource(sh, 1, (const GLchar **)&sbuffer, NULL);
+    glCompileShader(sh);
 
     int success;
-    glGetShaderiv(*out, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(sh, GL_COMPILE_STATUS, &success);
     if (!success) {
         char log[512];
-        glGetShaderInfoLog(*out, 512, NULL, log);
-        res = ls_ex_err((sf_shader_err){
+        glGetShaderInfoLog(sh, 512, NULL, log);
+
+        sf_str_free(spath);
+        free(sbuffer);
+        glDeleteShader(sh);
+        return ls_ex_err((sf_shader_err){
             SF_SHADER_COMPILE_ERROR,
             sf_str_fmt("Failed to compile shader '%s': %s", path, log)
         });
     }
 
-cleanup:
     sf_str_free(spath);
-    if (sbuffer) free(sbuffer);
-    return res.is_ok ? ls_ex_ok() : res;
+    free(sbuffer);
+    return ls_ex_ok(sh);
 }
 
 sf_shader_ex sf_shader_new(const sf_str path) {
     sf_shader out;
-    ls_ex res = sf_load_shader(&out.vertex, GL_VERTEX_SHADER, path);
+    ls_ex res = sf_load_shader(GL_VERTEX_SHADER, path);
     if (!res.is_ok)
         return sf_shader_ex_err((sf_shader_err){res.value.err.type,  res.value.err.compile_err});
-    res = sf_load_shader(&out.fragment, GL_FRAGMENT_SHADER, path);
+    out.vertex = res.value.ok;
+    res = sf_load_shader(GL_FRAGMENT_SHADER, path);
     if (!res.is_ok) {
         glDeleteShader(out.vertex);
         return sf_shader_ex_err((sf_shader_err){res.value.err.type,  res.value.err.compile_err});
     }
+    out.fragment = res.value.ok;
 
     out.program = glCreateProgram();
     glAttachShader(out.program, out.vertex);
