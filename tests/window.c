@@ -111,6 +111,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    sf_shader_free(&def);
     sf_texture_delete(&doom);
     sf_mesh_delete(&box);
     sf_window_close(win);
