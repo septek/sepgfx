@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     main_cam->transform.position = (sf_vec3){0, 0, 10};
 
     sf_transform identity = SF_TRANSFORM_IDENTITY;
-    //identity.scale = (sf_vec3){100, 100, 100};
+    identity.scale = (sf_vec3){5, 5, 5};
     while (sf_window_loop(win)) {
         sf_vec3 input = {
             sf_key_check(win, SF_KEY_RIGHT_ARROW) - sf_key_check(win, SF_KEY_LEFT_ARROW),
