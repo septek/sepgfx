@@ -2,17 +2,112 @@
 #define SF_WINDOW_H
 
 #include <sf/math.h>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include "sf/gfx/camera.h"
-#include "sf/gfx/key.h"
 #include "export.h"
 #include "meshes.h"
 
-#define SF_WINDOW_RESIZABLE     0b10000000
-#define SF_WINDOW_VISIBLE       0b01000000
-#define SF_WINDOW_MAXIMIZED     0b00100000
-#define SF_WINDOW_FULLSCREEN    0b00010000
+#define SF_KEY_PRESSED 2
+#define SF_KEY_DOWN 1
+#define SF_KEY_RELEASED -1
+
+/// Sorry this is so long lmao
+typedef enum {
+    SF_KEY_SPACE         = GLFW_KEY_SPACE,
+    SF_KEY_APOSTROPHE    = GLFW_KEY_APOSTROPHE,
+    SF_KEY_COMMA         = GLFW_KEY_COMMA,
+    SF_KEY_MINUS         = GLFW_KEY_MINUS,
+    SF_KEY_PERIOD        = GLFW_KEY_PERIOD,
+    SF_KEY_SLASH         = GLFW_KEY_SLASH,
+    SF_KEY_SEMICOLON     = GLFW_KEY_SEMICOLON,
+    SF_KEY_EQUAL         = GLFW_KEY_EQUAL,
+    SF_KEY_A             = GLFW_KEY_A,
+    SF_KEY_B             = GLFW_KEY_B,
+    SF_KEY_C             = GLFW_KEY_C,
+    SF_KEY_D             = GLFW_KEY_D,
+    SF_KEY_E             = GLFW_KEY_E,
+    SF_KEY_F             = GLFW_KEY_F,
+    SF_KEY_G             = GLFW_KEY_G,
+    SF_KEY_H             = GLFW_KEY_H,
+    SF_KEY_I             = GLFW_KEY_I,
+    SF_KEY_J             = GLFW_KEY_J,
+    SF_KEY_K             = GLFW_KEY_K,
+    SF_KEY_L             = GLFW_KEY_L,
+    SF_KEY_M             = GLFW_KEY_M,
+    SF_KEY_N             = GLFW_KEY_N,
+    SF_KEY_O             = GLFW_KEY_O,
+    SF_KEY_P             = GLFW_KEY_P,
+    SF_KEY_Q             = GLFW_KEY_Q,
+    SF_KEY_R             = GLFW_KEY_R,
+    SF_KEY_S             = GLFW_KEY_S,
+    SF_KEY_T             = GLFW_KEY_T,
+    SF_KEY_U             = GLFW_KEY_U,
+    SF_KEY_V             = GLFW_KEY_V,
+    SF_KEY_W             = GLFW_KEY_W,
+    SF_KEY_X             = GLFW_KEY_X,
+    SF_KEY_Y             = GLFW_KEY_Y,
+    SF_KEY_Z             = GLFW_KEY_Z,
+    SF_KEY_LEFT_BRACKET  = GLFW_KEY_LEFT_BRACKET,
+    SF_KEY_BACKSLASH     = GLFW_KEY_BACKSLASH,
+    SF_KEY_RIGHT_BRACKET = GLFW_KEY_RIGHT_BRACKET,
+    SF_KEY_GRAVE_ACCENT  = GLFW_KEY_GRAVE_ACCENT,
+    SF_KEY_ESCAPE        = GLFW_KEY_ESCAPE,
+    SF_KEY_ENTER         = GLFW_KEY_ENTER,
+    SF_KEY_TAB           = GLFW_KEY_TAB,
+    SF_KEY_BACKSPACE     = GLFW_KEY_BACKSPACE,
+    SF_KEY_DELETE        = GLFW_KEY_DELETE,
+    SF_KEY_RIGHT_ARROW   = GLFW_KEY_RIGHT,
+    SF_KEY_LEFT_ARROW    = GLFW_KEY_LEFT,
+    SF_KEY_DOWN_ARROW    = GLFW_KEY_DOWN,
+    SF_KEY_UP_ARROW      = GLFW_KEY_UP,
+    SF_KEY_PAGE_UP       = GLFW_KEY_PAGE_UP,
+    SF_KEY_PAGE_DOWN     = GLFW_KEY_PAGE_DOWN,
+    SF_KEY_HOME          = GLFW_KEY_HOME,
+    SF_KEY_CAPS_LOCK     = GLFW_KEY_CAPS_LOCK,
+    SF_KEY_SCROLL_LOCK   = GLFW_KEY_SCROLL_LOCK,
+    SF_KEY_NUM_LOCK      = GLFW_KEY_NUM_LOCK,
+    SF_KEY_PRINT_SCREEN  = GLFW_KEY_PRINT_SCREEN,
+    SF_KEY_PAUSE         = GLFW_KEY_PAUSE,
+    SF_KEY_F1            = GLFW_KEY_F1,
+    SF_KEY_F2            = GLFW_KEY_F2,
+    SF_KEY_F3            = GLFW_KEY_F3,
+    SF_KEY_F4            = GLFW_KEY_F4,
+    SF_KEY_F5            = GLFW_KEY_F5,
+    SF_KEY_F6            = GLFW_KEY_F6,
+    SF_KEY_F7            = GLFW_KEY_F7,
+    SF_KEY_F8            = GLFW_KEY_F8,
+    SF_KEY_F9            = GLFW_KEY_F9,
+    SF_KEY_F10           = GLFW_KEY_F10,
+    SF_KEY_F11           = GLFW_KEY_F11,
+    SF_KEY_F12           = GLFW_KEY_F12,
+    SF_KEY_F13           = GLFW_KEY_F13,
+    SF_KEY_F14           = GLFW_KEY_F14,
+    SF_KEY_F15           = GLFW_KEY_F15,
+    SF_KEY_F16           = GLFW_KEY_F16,
+    SF_KEY_F17           = GLFW_KEY_F17,
+    SF_KEY_F18           = GLFW_KEY_F18,
+    SF_KEY_F19           = GLFW_KEY_F19,
+    SF_KEY_F20           = GLFW_KEY_F20,
+    SF_KEY_F21           = GLFW_KEY_F21,
+    SF_KEY_F22           = GLFW_KEY_F22,
+    SF_KEY_F23           = GLFW_KEY_F23,
+    SF_KEY_F24           = GLFW_KEY_F24,
+    SF_KEY_F25           = GLFW_KEY_F25,
+    SF_KEY_LEFT_SHIFT    = GLFW_KEY_LEFT_SHIFT,
+    SF_KEY_LEFT_CONTROL  = GLFW_KEY_LEFT_CONTROL,
+    SF_KEY_LEFT_ALT      = GLFW_KEY_LEFT_ALT,
+    SF_KEY_LEFT_SUPER    = GLFW_KEY_LEFT_SUPER,
+    SF_KEY_RIGHT_SHIFT   = GLFW_KEY_RIGHT_SHIFT,
+    SF_KEY_RIGHT_CONTROL = GLFW_KEY_RIGHT_CONTROL,
+    SF_KEY_RIGHT_ALT     = GLFW_KEY_RIGHT_ALT,
+    SF_KEY_RIGHT_SUPER   = GLFW_KEY_RIGHT_SUPER,
+    SF_KEY_MENU          = GLFW_KEY_MENU,
+    SF_KEY_COUNT,
+} sf_key;
+
+#define SF_WINDOW_RESIZABLE  (1 << 0)
+#define SF_WINDOW_VISIBLE    (1 << 1)
+#define SF_WINDOW_MAXIMIZED  (1 << 2)
+#define SF_WINDOW_FULLSCREEN (1 << 3)
 
 /// A window with an active OpenGL context and keyboard controls.
 typedef struct {
@@ -30,8 +125,20 @@ typedef struct {
     char keyboard_string[UINT8_MAX];
 } sf_window;
 
+typedef enum {
+    SF_GLFW_INIT_FAILED,
+    SF_GLFW_CREATE_FAILED,
+
+    SF_GLAD_INIT_FAILED,
+} sf_window_err;
+
+#define EXPECTED_NAME sf_window_ex
+#define EXPECTED_O sf_window *
+#define EXPECTED_E sf_window_err
+#include <sf/containers/expected.h>
+
 /// Construct and open a new OpenGL window.
-EXPORT sf_result sf_window_new(sf_window **out, sf_str title, sf_vec2 size, sf_camera *camera, uint8_t hints);
+EXPORT sf_window_ex sf_window_new(sf_str title, sf_vec2 size, sf_camera *camera, uint8_t hints);
 /// Free a window and its resources.
 EXPORT void sf_window_close(sf_window *window);
 
@@ -50,7 +157,7 @@ EXPORT void sf_window_set_camera(sf_window *window, sf_camera *camera);
 /// Use this in a while loop.
 EXPORT bool sf_window_loop(const sf_window *window);
 /// Swap a window's buffers and finish the frame.
-EXPORT sf_result sf_window_draw(sf_window *window, sf_shader *post_shader);
+EXPORT sf_draw_ex sf_window_draw(sf_window *window, sf_shader *post_shader);
 
 /// Set the displayed title of a window.
 EXPORT void sf_window_set_title(sf_window *window, const sf_str title);

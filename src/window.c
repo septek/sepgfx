@@ -1,13 +1,12 @@
-#include <sf/dynamic.h>
-#include "sf/window.h"
-
-#include "sf/shaders.h"
+#include "sf/gfx/window.h"
+#include "sf/gfx/shaders.h"
 
 void sf_cb_err(const int error_code, const char *error_string) {
     fprintf(stderr, "OpenGL Error %d: '%s.'", error_code, error_string);
 }
 
-void sf_cb_key(GLFWwindow* window, const int key, [[maybe_unused]] int scancode, const int action, [[maybe_unused]] int mods) {
+void sf_cb_key(GLFWwindow* window, const int key, int scancode, const int action, int mods) {
+    (void)scancode; (void)mods;
     sf_window *win = glfwGetWindowUserPointer(window);
     switch (action) {
         case GLFW_RELEASE: win->keyboard[key] = SF_KEY_RELEASED; break;
@@ -38,36 +37,36 @@ void sf_cb_resize(GLFWwindow* window, const int width, const int height) {
 }
 
 void APIENTRY sf_gl_dbglog(GLuint source, GLuint type, GLuint id, GLuint severity,
-    [[maybe_unused]] GLsizei length, const GLchar *message, [[maybe_unused]] const void *userParam) {
+    GLsizei length, const GLchar *message, const void *userParam) {
+    (void)length; (void)userParam;
     printf("[OpenGL] (Source %u) (Type %u) (ID %u), (Severity %u) \"%s\"\n", source, type, id, severity, message);
 }
 
-sf_result sf_window_new(sf_window **out, const sf_str title, const sf_vec2 size, sf_camera *camera, const uint8_t hints) {
-    *out = sf_calloc(1, sizeof(sf_window));
-    memcpy(*out, &(sf_window) {
+sf_window_ex sf_window_new(const sf_str title, const sf_vec2 size, sf_camera *camera, const uint8_t hints) {
+    sf_window *win = calloc(1, sizeof(sf_window));
+    *win = (sf_window){
         .title = sf_str_dup(title),
         .size = size,
         .mouse_position = { 0, 0 },
         .hints = hints,
-    }, sizeof(sf_window));
-    sf_window *win = *out;
+    };
 
     //TODO: GLFW Init
     if (!glfwInit()) {
         glfwTerminate();
-        return sf_err(sf_lit("GLFW Failed to initialize."));
+        return sf_window_ex_err(SF_GLFW_INIT_FAILED);
     }
 
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_RESIZABLE, (hints & SF_WINDOW_RESIZABLE) == SF_WINDOW_RESIZABLE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-    if (!((win->handle = glfwCreateWindow((int)size.x, (int)size.y, title.c_str, nullptr, nullptr))))
-        return sf_err(sf_lit("GLFW Failed to open the window."));
+    if (!((win->handle = glfwCreateWindow((int)size.x, (int)size.y, title.c_str, NULL, NULL))))
+        return sf_window_ex_err(SF_GLFW_CREATE_FAILED);
 
     glfwSetWindowUserPointer(win->handle, win); // Point to myself
     glfwSetErrorCallback(sf_cb_err);
@@ -77,7 +76,7 @@ sf_result sf_window_new(sf_window **out, const sf_str title, const sf_vec2 size,
 
     glfwMakeContextCurrent(win->handle);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        return sf_err(sf_lit("GLAD Failed to initialize!"));
+        return sf_window_ex_err(SF_GLAD_INIT_FAILED);
     sf_window_set_camera(win, camera);
 
     win->fb_mesh = sf_mesh_new();
@@ -91,9 +90,11 @@ sf_result sf_window_new(sf_window **out, const sf_str title, const sf_vec2 size,
         {{-1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}, sf_rgbagl(SF_WHITE)},
     }, 6);
 
+    #ifdef GL_DEBUG_OUTPUT
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(sf_gl_dbglog, nullptr);
+    glDebugMessageCallback(sf_gl_dbglog, NULL);
+    #endif
     glEnable(GL_DEPTH_TEST);
 
     if ((hints & SF_WINDOW_VISIBLE) == SF_WINDOW_VISIBLE)
@@ -103,11 +104,11 @@ sf_result sf_window_new(sf_window **out, const sf_str title, const sf_vec2 size,
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         glfwSetWindowMonitor(win->handle, monitor,
             0, 0,
-            size.x, size.y,
+            (int)size.x, (int)size.y,
             0);
     }
 
-    return sf_ok();
+    return sf_window_ex_ok(win);
 }
 
 void sf_window_close(sf_window *window) {
@@ -154,21 +155,21 @@ bool sf_window_loop(const sf_window *window) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, window->camera->framebuffer);
     const sf_glcolor gl = sf_rgbagl(window->camera->clear_color);
-    glClearColor(gl.r, gl.g, gl.b, gl.a);
+    glClearColor(gl.rgba.r, gl.rgba.g, gl.rgba.b, gl.rgba.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     return !glfwWindowShouldClose(window->handle);
 }
 
-sf_result sf_window_draw(sf_window *window, sf_shader *post_shader) {
+sf_draw_ex sf_window_draw(sf_window *window, sf_shader *post_shader) {
     glfwMakeContextCurrent(window->handle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, (int)window->size.x, (int)window->size.y);
-    const sf_result res = sf_mesh_draw(&window->fb_mesh, post_shader, SF_RENDER_DEFAULT, SF_TRANSFORM_IDENTITY, &window->camera->fb_color);
+    const sf_draw_ex res = sf_mesh_draw(&window->fb_mesh, post_shader, SF_RENDER_DEFAULT, SF_TRANSFORM_IDENTITY, &window->camera->fb_color);
     glfwSwapBuffers(window->handle);
-    if (!res.ok)
+    if (!res.is_ok)
         return res;
 
     for (int i = 0; i < SF_KEY_COUNT; ++i) {
@@ -178,7 +179,7 @@ sf_result sf_window_draw(sf_window *window, sf_shader *post_shader) {
             window->keyboard[i] = 0;
     }
 
-    return sf_ok();
+    return sf_draw_ex_ok();
 }
 
 void sf_window_set_title(sf_window *window, const sf_str title) {
@@ -204,14 +205,14 @@ void sf_window_update_hints(sf_window *window, uint8_t hints) {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         glfwSetWindowMonitor(window->handle, monitor,
             0, 0,
-            window->size.x, window->size.y,
+            (int)window->size.x, (int)window->size.y,
             0);
     } else if (window->hints & SF_WINDOW_FULLSCREEN) {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        glfwSetWindowMonitor(window->handle, nullptr,
-            (mode->width - window->size.x) / 2, (mode->height - window->size.y) / 2,
-            window->size.x, window->size.y,
+        glfwSetWindowMonitor(window->handle, NULL,
+            (mode->width - (int)window->size.x) / 2, (mode->height - (int)window->size.y) / 2,
+            (int)window->size.x, (int)window->size.y,
             0);
         window->hints &= ~SF_WINDOW_FULLSCREEN;
     }

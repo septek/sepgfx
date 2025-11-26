@@ -1,5 +1,5 @@
-#include "sf/camera.h"
-#include "sf/shaders.h"
+#include "sf/gfx/camera.h"
+#include "sf/gfx/shaders.h"
 
 sf_camera sf_camera_new(const sf_camera_type type, const float fov, const float near, const float far) {
     return (sf_camera){

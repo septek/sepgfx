@@ -2,17 +2,10 @@
 "name": "sf-gfx",
 "version-string": "1.0.0",
 "dependencies": [
+    "glfw3", "cglm",
     {
-        "name": "glfw3",
-        "version>=": "3.4#1"
-    },
-    {
-        "name": "glad",
-        "version>=": "0.1.36"
-    },
-    {
-        "name": "cglm",
-        "version>=": "0.9.4"
+      "name": "glad",
+      "features": [ "gl-api-41" ]
     }
 ],
 "builtin-baseline": "edffab1bcd2cb5b8c17d6ba34d5651ea0bf82979"

@@ -4,7 +4,7 @@
 #include "sf/str.h"
 
 #define EXPECTED_NAME ls_ex
-#define EXPECTED_O GLint
+#define EXPECTED_O GLuint
 #define EXPECTED_E sf_shader_err
 #include <sf/containers/expected.h>
 
@@ -12,7 +12,7 @@ ls_ex sf_load_shader(const GLenum type, const sf_str path) {
     const sf_str spath = sf_str_fmt("%s.%s", path.c_str, type == GL_FRAGMENT_SHADER ? "frag" : "vert");
     uint8_t *sbuffer = NULL;
 
-    GLint sh = glCreateShader(type);
+    GLuint sh = glCreateShader(type);
 
     const long s = sf_file_size(spath);
     if (s <= 0) {

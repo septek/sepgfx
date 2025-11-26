@@ -13,10 +13,10 @@ add_library(${PROJECT_NAME} ${LIBRARY_TYPE}
     src/shaders.c
     src/textures.c
     src/window.c
-
-    src/stb_image.c
 )
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_library(stb_image src/stb_image.c)
+target_include_directories(stb_image PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 option(ENABLE_SANITIZERS "Enable sanitizers" OFF)
 if (ENABLE_SANITIZERS AND NOT MSVC)
@@ -71,9 +71,9 @@ find_package(cglm CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PUBLIC
     sf-std
     glfw
-    cglm
-    glad
-    stb
+    cglm::cglm
+    glad::glad
+    stb_image
 )
 
 # CTest

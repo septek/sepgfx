@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "export.h"
+#include <sf/fs.h>
 
 typedef enum {
     SF_TEXTURE_RGB,
@@ -21,7 +22,7 @@ typedef struct {
 } sf_texture;
 #define EXPECTED_NAME sf_texture_ex
 #define EXPECTED_O sf_texture
-#define EXPECTED_E sf_str
+#define EXPECTED_E sf_fs_err
 #include <sf/containers/expected.h>
 /// Create an empty OpenGL texture.
 EXPORT sf_texture sf_texture_new(sf_texture_type type, sf_vec2 dimensions);

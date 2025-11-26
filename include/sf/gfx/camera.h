@@ -6,7 +6,7 @@
 #include "export.h"
 #include "shaders.h"
 #include "textures.h"
-#include "glad/glad.h"
+#include <glad/glad.h>
 
 typedef enum {
     SF_CAMERA_RENDER_DEFAULT,

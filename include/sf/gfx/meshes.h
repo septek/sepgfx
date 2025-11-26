@@ -3,7 +3,6 @@
 
 #include <sf/math.h>
 #include <string.h>
-#include "sf/gfx/error.h"
 #include "sf/gfx/camera.h"
 #include "sf/gfx/shaders.h"
 #include "sf/gfx/textures.h"
@@ -34,8 +33,8 @@ typedef struct {
 
 /// A bitfield containing information about an active mesh.
 typedef uint8_t sf_mesh_flags;
-#define SF_MESH_ACTIVE (sf_mesh_flags)0b10000000
-#define SF_MESH_VISIBLE (sf_mesh_flags)0b01000000
+#define SF_MESH_ACTIVE (sf_mesh_flags)(1 << 0)
+#define SF_MESH_VISIBLE (sf_mesh_flags)(1 << 1)
 
 /// A mesh containing data for drawing a 3d model of any variety.
 typedef struct {
@@ -45,6 +44,20 @@ typedef struct {
     sf_index_cache cache;
     sf_mesh_flags flags;
 } sf_mesh;
+
+typedef struct {
+    enum {
+        SF_DRAW_SHADER_MISSING,
+        SF_DRAW_UNKNOWN_UNIFORM,
+    } type;
+    union {
+        sf_str uniform_name;
+    } value;
+} sf_draw_err;
+
+#define EXPECTED_NAME sf_draw_ex
+#define EXPECTED_E sf_draw_err
+#include <sf/containers/expected.h>
 
 /// Create a new, empty mesh.
 EXPORT sf_mesh sf_mesh_new(void);
@@ -61,6 +74,6 @@ EXPORT void sf_mesh_add_vertices(sf_mesh *mesh, const sf_vertex *vertices, size_
 
 /// Draw a mesh to the framebuffer of the specified camera.
 /// To draw to the default framebuffer, pass SF_RENDER_DEFAULT.
-EXPORT sf_gfx_ex sf_mesh_draw(const sf_mesh *mesh, sf_shader *shader, const sf_camera *camera, sf_transform transform, const sf_texture *texture);
+EXPORT sf_draw_ex sf_mesh_draw(const sf_mesh *mesh, sf_shader *shader, const sf_camera *camera, sf_transform transform, const sf_texture *texture);
 
 #endif // MESHES_H
