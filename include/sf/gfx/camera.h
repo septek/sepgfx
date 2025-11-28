@@ -22,7 +22,8 @@ typedef struct {
     mat4 projection;
 
     GLuint framebuffer;
-    sf_texture fb_color, fb_stencil;
+    sf_texture fb_color;
+    GLuint fb_stencil;
     sf_rgba clear_color;
 } sf_camera;
 

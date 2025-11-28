@@ -16,7 +16,7 @@ void sf_camera_delete(sf_camera *camera) {
     if (camera->framebuffer != 0) {
         glDeleteFramebuffers(1, &camera->framebuffer);
         sf_texture_delete(&camera->fb_color);
-        sf_texture_delete(&camera->fb_stencil);
+        glDeleteRenderbuffers(1, &camera->fb_stencil);
     }
 }
 

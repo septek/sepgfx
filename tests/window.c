@@ -31,13 +31,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    // You should allocate cameras on the heap, or at the very least try to keep them in the same
-    // place on the stack during the lifetime of a window. You can update it, though. (see sf_window_set_camera)
-    sf_camera *main_cam = calloc(1, sizeof(sf_camera));
-    *main_cam = sf_camera_new(SF_CAMERA_PERSPECTIVE, 90, 0.1f, 100.0f);
-    assert(main_cam);
-    sf_window_ex wx = sf_window_new(sf_lit("Cool Window"), window_size,
-        main_cam, SF_WINDOW_VISIBLE | SF_WINDOW_RESIZABLE);
+    sf_window_ex wx = sf_window_new(sf_lit("Cool Window"), window_size, SF_WINDOW_VISIBLE | SF_WINDOW_RESIZABLE);
     if (!wx.is_ok) {
         // You can process each error case if you want.
         switch (wx.value.err) {
@@ -49,6 +43,12 @@ int main(int argc, char **argv) {
         return -1;
     }
     sf_window *win = wx.value.ok;
+
+    sf_camera *main_cam = calloc(1, sizeof(sf_camera));
+    assert(main_cam);
+    *main_cam = sf_camera_new(SF_CAMERA_PERSPECTIVE, 90, 0.1f, 100.0f);
+    sf_window_set_camera(win, main_cam);
+    main_cam->clear_color = SF_WHITE;
 
     sf_shader_ex sx = sf_shader_new(sf_lit("sample_shaders/default"));
     if (!sx.is_ok) {

@@ -44,7 +44,7 @@ ls_ex sf_load_shader(const GLenum type, const sf_str path) {
         glDeleteShader(sh);
         return ls_ex_err((sf_shader_err){
             SF_SHADER_COMPILE_ERROR,
-            sf_str_fmt("Failed to compile shader '%s': %s", path, log)
+            sf_str_fmt("Failed to compile shader '%s': %s", path.c_str, log)
         });
     }
 
@@ -107,6 +107,7 @@ void sf_shader_free(sf_shader *shader) {
 #include <sf/containers/expected.h>
 
 gu_ex sf_get_uniform(sf_shader *shader, const sf_str name) {
+    sf_shader_bind(shader);
     sf_uniform_map_ex res = sf_uniform_map_get(&shader->uniforms, name);
     if (res.is_ok)
         return gu_ex_ok(res.value.ok);

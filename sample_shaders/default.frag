@@ -9,5 +9,5 @@ uniform sampler2D t_sampler;
 void main() {
     vec4 tex_color = texture(t_sampler, fv2_uv);
     oc_frag = tex_color * fc_vcolor;
-    if (oc_frag.a < 0.01) discard;
+    //if (oc_frag.a < 0.01) discard;
 }
