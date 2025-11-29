@@ -86,7 +86,7 @@ sf_window_ex sf_window_new(const sf_str title, const sf_vec2 size, sf_camera *ca
         {{-1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}, sf_rgbagl(SF_WHITE)},
     }, 6);
 
-    #ifndef __APPLE__
+    #ifdef GL_DEBUG_OUTPUT
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(sf_gl_dbglog, NULL);

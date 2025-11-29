@@ -18,14 +18,14 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Width '%s' is invalid.\n", argv[1]);
             return -1;
         }
-        window_size.x = value;
+        window_size.x = (float)value;
 
         value = strtol(argv[2], &end, 10);
         if (end == argv[1] || *end != '\0' || errno == ERANGE || value < 0 || value > 9999) {
             fprintf(stderr, "Height '%s' is invalid.\n", argv[1]);
             return -1;
         }
-        window_size.y = value;
+        window_size.y = (float)value;
     } else if (argc != 1) {
         fprintf(stderr, "Args: width (0-9999), height (0-9999)\n");
         return -1;
