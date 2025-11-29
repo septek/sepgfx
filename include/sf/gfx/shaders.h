@@ -17,7 +17,7 @@
 /// Uniform locations are automatically cached as you use them.
 typedef struct {
     sf_str path;
-    GLuint vertex, fragment, program;
+    GLuint program;
     sf_uniform_map uniforms;
 } sf_shader;
 

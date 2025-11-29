@@ -58,27 +58,28 @@ sf_shader_ex sf_shader_new(const sf_str path) {
     ls_ex res = sf_load_shader(GL_VERTEX_SHADER, path);
     if (!res.is_ok)
         return sf_shader_ex_err((sf_shader_err){res.value.err.type,  res.value.err.compile_err});
-    out.vertex = res.value.ok;
+
+    GLuint vertex, fragment;
+    vertex = res.value.ok;
     res = sf_load_shader(GL_FRAGMENT_SHADER, path);
     if (!res.is_ok) {
-        glDeleteShader(out.vertex);
+        glDeleteShader(vertex);
         return sf_shader_ex_err((sf_shader_err){res.value.err.type,  res.value.err.compile_err});
     }
-    out.fragment = res.value.ok;
+    fragment = res.value.ok;
 
     out.program = glCreateProgram();
-    glAttachShader(out.program, out.vertex);
-    glAttachShader(out.program, out.fragment);
+    glAttachShader(out.program, vertex);
+    glAttachShader(out.program, fragment);
     glLinkProgram(out.program);
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
 
     int success;
     glGetProgramiv(out.program, GL_LINK_STATUS, &success);
     if (!success) {
         char log[512];
         glGetProgramInfoLog(out.program, 512, NULL, log);
-
-        glDeleteShader(out.vertex);
-        glDeleteShader(out.fragment);
         return sf_shader_ex_err((sf_shader_err){
             SF_SHADER_COMPILE_ERROR,
             sf_str_fmt("Failed to compile shader '%s': %s", path, log)
@@ -93,12 +94,7 @@ sf_shader_ex sf_shader_new(const sf_str path) {
 
 void sf_shader_free(sf_shader *shader) {
     sf_str_free(shader->path);
-
-    glDeleteShader(shader->vertex);
-    glDeleteShader(shader->fragment);
-
     glDeleteProgram(shader->program);
-
     sf_uniform_map_free(&shader->uniforms);
 }
 

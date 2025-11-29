@@ -11,7 +11,7 @@ sf_texture sf_texture_new(sf_texture_type type, const sf_vec2 dimensions) {
     glBindTexture(GL_TEXTURE_2D, tex.handle);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     sf_texture_resize(&tex, dimensions);
 
@@ -37,7 +37,7 @@ sf_texture_ex sf_texture_load(const sf_str path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (int)out.dimensions.x,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (int)out.dimensions.x,
     (int)out.dimensions.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -50,7 +50,7 @@ EXPORT void sf_texture_resize(sf_texture *texture, const sf_vec2 dimensions) {
         return;
 
     glBindTexture(GL_TEXTURE_2D, texture->handle);
-    GLint internal_format = GL_RGBA;
+    GLint internal_format = GL_RGBA8;
     GLuint format = GL_RGBA;
     GLuint g_type = GL_UNSIGNED_BYTE;
     switch (texture->type) {
@@ -69,7 +69,9 @@ EXPORT void sf_texture_resize(sf_texture *texture, const sf_vec2 dimensions) {
 
     glTexImage2D(GL_TEXTURE_2D, 0, internal_format, (int)dimensions.x,
         (int)dimensions.y, 0, format, g_type, NULL);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    if (texture->type != SF_TEXTURE_DEPTH_STENCIL) {
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
     glBindTexture(GL_TEXTURE_2D, 0);
     texture->dimensions = dimensions;
 }

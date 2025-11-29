@@ -9,6 +9,7 @@
 
 /// Camera that renders to the default framebuffer instead of its own framebuffer.
 extern const sf_camera *SF_RENDER_DEFAULT;
+static inline sf_camera sf_render_default(sf_vec2 viewport) { sf_camera c = *SF_RENDER_DEFAULT; c.viewport = viewport; return c; }
 
 /// Contains vertex data for composing a mesh.
 #pragma pack(push, 1)
@@ -23,12 +24,12 @@ typedef struct {
 #define VEC_T sf_vertex
 #include <sf/containers/vec.h>
 #define VEC_NAME sf_index_vec
-#define VEC_T int32_t
+#define VEC_T uint32_t
 #include <sf/containers/vec.h>
 #define MAP_NAME sf_index_cache
 #define MAP_K sf_vertex
-#define MAP_V int32_t
-#define EQUAL_FN(v1, v2) (memcmp(&v1, &v2, sizeof(sf_vertex)))
+#define MAP_V uint32_t
+#define EQUAL_FN(v1, v2) (memcmp(&v1, &v2, sizeof(sf_vertex)) == 0)
 #include <sf/containers/map.h>
 
 /// A bitfield containing information about an active mesh.

@@ -1,8 +1,10 @@
 #include "sf/gfx/window.h"
+#include "sf/gfx/camera.h"
+#include "sf/gfx/meshes.h"
 #include "sf/gfx/shaders.h"
 
 void sf_cb_err(const int error_code, const char *error_string) {
-    fprintf(stderr, "OpenGL Error %d: '%s.'", error_code, error_string);
+    fprintf(stderr, "OpenGL Error %d: '%s.'\n", error_code, error_string);
 }
 
 void sf_cb_key(GLFWwindow* window, const int key, int scancode, const int action, int mods) {
@@ -42,7 +44,7 @@ void APIENTRY sf_gl_dbglog(GLuint source, GLuint type, GLuint id, GLuint severit
     printf("[OpenGL] (Source %u) (Type %u) (ID %u), (Severity %u) \"%s\"\n", source, type, id, severity, message);
 }
 
-sf_window_ex sf_window_new(const sf_str title, const sf_vec2 size, const uint8_t hints) {
+sf_window_ex sf_window_new(const sf_str title, const sf_vec2 size, sf_camera *camera, const uint8_t hints) {
     sf_window *win = calloc(1, sizeof(sf_window));
     *win = (sf_window){
         .title = sf_str_dup(title),
@@ -59,21 +61,19 @@ sf_window_ex sf_window_new(const sf_str title, const sf_vec2 size, const uint8_t
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_RESIZABLE, (hints & SF_WINDOW_RESIZABLE) == SF_WINDOW_RESIZABLE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
     if (!((win->handle = glfwCreateWindow((int)size.x, (int)size.y, title.c_str, NULL, NULL))))
         return sf_window_ex_err(SF_GLFW_CREATE_FAILED);
+    glfwMakeContextCurrent(win->handle);
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+        return sf_window_ex_err(SF_GLAD_INIT_FAILED);
 
     glfwSetWindowUserPointer(win->handle, win); // Point to myself
     glfwSetKeyCallback(win->handle, sf_cb_key);
     glfwSetCharCallback(win->handle, sf_cb_char);
     glfwSetFramebufferSizeCallback(win->handle, sf_cb_resize);
-
-    glfwMakeContextCurrent(win->handle);
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        return sf_window_ex_err(SF_GLAD_INIT_FAILED);
 
     win->fb_mesh = sf_mesh_new();
     sf_mesh_add_vertices(&win->fb_mesh, (sf_vertex[]){
@@ -104,6 +104,13 @@ sf_window_ex sf_window_new(const sf_str title, const sf_vec2 size, const uint8_t
             0);
     }
 
+    // Retina
+    int fb_width, fb_height;
+    glfwGetFramebufferSize(win->handle, &fb_width, &fb_height);
+    win->size = (sf_vec2){ (float)fb_width, (float)fb_height };
+
+    sf_window_set_camera(win, camera);
+
     return sf_window_ex_ok(win);
 }
 
@@ -124,33 +131,24 @@ void sf_window_set_camera(sf_window *window, sf_camera *camera) {
     if (camera->type == SF_CAMERA_ORTHOGRAPHIC)
         glm_ortho(0, window->size.x, window->size.y, 0, camera->near, camera->far, camera->projection);
     else glm_perspective(camera->fov, window->size.x/window->size.y, camera->near, camera->far, camera->projection);
+    camera->viewport = window->size;
 
     if (camera->framebuffer == 0) {
         glGenFramebuffers(1, &camera->framebuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, camera->framebuffer);
+        glViewport(0, 0, (int)camera->viewport.x, (int)camera->viewport.y);
+        glDrawBuffers(1, (GLenum[]){GL_COLOR_ATTACHMENT0});
 
         camera->fb_color = sf_texture_new(SF_TEXTURE_RGBA, window->size);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                            GL_TEXTURE_2D, camera->fb_color.handle, 0);
+        camera->fb_stencil = sf_texture_new(SF_TEXTURE_DEPTH_STENCIL, window->size);
 
-        glGenRenderbuffers(1, &camera->fb_stencil);
-        glBindRenderbuffer(GL_RENDERBUFFER, camera->fb_stencil);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
-                            window->size.x, window->size.y);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-                                GL_RENDERBUFFER, camera->fb_stencil);
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-            printf("FBO ERROR: %x\n", status);
-        }
-
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, camera->fb_color.handle, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, camera->fb_stencil.handle, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, (int)window->size.x, (int)window->size.y);
     } else {
         sf_texture_resize(&camera->fb_color, window->size);
-        glBindRenderbuffer(GL_RENDERBUFFER, camera->fb_stencil);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,
-                            window->size.x, window->size.y);
+        sf_texture_resize(&camera->fb_stencil, window->size);
     }
 
     window->camera = camera;
@@ -175,13 +173,16 @@ sf_draw_ex sf_window_draw(sf_window *window, sf_shader *post_shader) {
     glfwMakeContextCurrent(window->handle);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, (int)window->size.x, (int)window->size.y);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    const sf_glcolor gl = sf_rgbagl(SF_RENDER_DEFAULT->clear_color);
+    glClearColor(gl.rgba.r, gl.rgba.g, gl.rgba.b, gl.rgba.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glDisable(GL_DEPTH_TEST);
-    const sf_draw_ex res = sf_mesh_draw(&window->fb_mesh, post_shader, SF_RENDER_DEFAULT, SF_TRANSFORM_IDENTITY, &window->camera->fb_color);
+    sf_camera fb = sf_render_default(window->size);
+    const sf_draw_ex res = sf_mesh_draw(&window->fb_mesh, post_shader, &fb, SF_TRANSFORM_IDENTITY, &window->camera->fb_color);
     glEnable(GL_DEPTH_TEST);
     glfwSwapBuffers(window->handle);
+
     if (!res.is_ok)
         return res;
 

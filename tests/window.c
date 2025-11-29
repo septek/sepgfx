@@ -31,7 +31,11 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    sf_window_ex wx = sf_window_new(sf_lit("Cool Window"), window_size, SF_WINDOW_VISIBLE | SF_WINDOW_RESIZABLE);
+    sf_camera *main_cam = calloc(1, sizeof(sf_camera));
+    assert(main_cam);
+    *main_cam = sf_camera_new(SF_CAMERA_PERSPECTIVE, 90, 0.1f, 100.0f);
+
+    sf_window_ex wx = sf_window_new(sf_lit("Window Test"), window_size, main_cam, SF_WINDOW_VISIBLE | SF_WINDOW_RESIZABLE);
     if (!wx.is_ok) {
         // You can process each error case if you want.
         switch (wx.value.err) {
@@ -44,13 +48,7 @@ int main(int argc, char **argv) {
     }
     sf_window *win = wx.value.ok;
 
-    sf_camera *main_cam = calloc(1, sizeof(sf_camera));
-    assert(main_cam);
-    *main_cam = sf_camera_new(SF_CAMERA_PERSPECTIVE, 90, 0.1f, 100.0f);
-    sf_window_set_camera(win, main_cam);
-    main_cam->clear_color = SF_WHITE;
-
-    sf_shader_ex sx = sf_shader_new(sf_lit("sample_shaders/default"));
+    sf_shader_ex sx = sf_shader_new(sf_lit("tests/assets/shaders/default"));
     if (!sx.is_ok) {
         switch (sx.value.err.type) {
             case SF_SHADER_COMPILE_ERROR: fprintf(stderr, "Default shader failed to compile: %s\n", sx.value.err.compile_err.c_str); break;
@@ -72,7 +70,7 @@ int main(int argc, char **argv) {
         {{-1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}, sf_rgbagl(SF_WHITE)},
     }, 6);
 
-    sf_texture_ex dx = sf_texture_load(sf_lit("doom.png"));
+    sf_texture_ex dx = sf_texture_load(sf_lit("tests/assets/doom.png"));
     if (!dx.is_ok) {
         switch (dx.value.err) {
             case SF_FILE_NOT_FOUND: fprintf(stderr, "No DOOM? :(\n"); break;
@@ -89,8 +87,8 @@ int main(int argc, char **argv) {
     identity.scale = (sf_vec3){5, 5, 5};
     while (sf_window_loop(win)) {
         sf_vec3 input = {
-            sf_key_check(win, SF_KEY_RIGHT_ARROW) - sf_key_check(win, SF_KEY_LEFT_ARROW),
-            sf_key_check(win, SF_KEY_SPACE) - sf_key_check(win, SF_KEY_LEFT_CONTROL),
+            sf_key_check(win, SF_KEY_LEFT_ARROW) - sf_key_check(win, SF_KEY_RIGHT_ARROW),
+            sf_key_check(win, SF_KEY_LEFT_CONTROL) - sf_key_check(win, SF_KEY_SPACE),
             sf_key_check(win, SF_KEY_DOWN_ARROW) - sf_key_check(win, SF_KEY_UP_ARROW)
         };
         main_cam->transform.position = sf_vec3_add(main_cam->transform.position, sf_vec3_multf(input, 0.1f));

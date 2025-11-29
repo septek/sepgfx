@@ -1,4 +1,5 @@
 build/
 .cache/
-*.exe
 vcpkg_installed
+*.o
+*.exe

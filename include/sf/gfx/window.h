@@ -138,7 +138,7 @@ typedef enum {
 #include <sf/containers/expected.h>
 
 /// Construct and open a new OpenGL window.
-EXPORT sf_window_ex sf_window_new(sf_str title, sf_vec2 size, uint8_t hints);
+EXPORT sf_window_ex sf_window_new(sf_str title, sf_vec2 size, sf_camera *camera, uint8_t hints);
 /// Free a window and its resources.
 EXPORT void sf_window_close(sf_window *window);
 
